@@ -33,6 +33,8 @@ fun main() {
     }
 
     val bufferedWatermarkImage = ImageIO.read(watermark)
+    val watermarkTransparency = askWatermarkTransparency(bufferedWatermarkImage)
+
     if (bufferedWatermarkImage.colorModel.numColorComponents != 3){
         println("The number of watermark color components isn't 3.")
         return
@@ -64,7 +66,7 @@ fun main() {
         return
     }
 
-    val output = imageBlend(bufferedImage,bufferedWatermarkImage,weight)
+    val output = imageBlend(bufferedImage,bufferedWatermarkImage,weight,watermarkTransparency)
 
 
     ImageIO.write(output, outputName.split(".").last(), File(outputName))
@@ -110,19 +112,34 @@ fun checkWeight(w:String):Int {
     }
 }
 
-fun imageBlend(image:BufferedImage,watermark:BufferedImage, weight:Int):BufferedImage {
+fun imageBlend(image:BufferedImage,watermark:BufferedImage, weight:Int,watermarkTransparency:Boolean):BufferedImage {
     val output = BufferedImage(image.width,image.height,BufferedImage.TYPE_INT_RGB)
     for (x in 0 until image.width){
         for (y in 0 until image.height){
-            val a = Color(image.getRGB(x,y))
-            val b = Color(watermark.getRGB(x,y))
+            val a = Color(image.getRGB(x,y)) //image
+            val b = Color(watermark.getRGB(x,y),watermarkTransparency) // watermark
 
-            val color = Color(
-                (weight * b.red + (100 - weight) * a.red) / 100,
-                (weight * b.green + (100 - weight) * a.green) / 100,
-                (weight * b.blue + (100 - weight) * a.blue) / 100)
+            val color = if (b.alpha == 0) {
+                Color(a.red, a.green, a.blue)
+            } else {
+                Color(
+                    (weight * b.red + (100 - weight) * a.red) / 100,
+                    (weight * b.green + (100 - weight) * a.green) / 100,
+                    (weight * b.blue + (100 - weight) * a.blue) / 100)
+            }
             output.setRGB(x,y,color.rgb)
         }
     }
     return output
+}
+
+fun askWatermarkTransparency(bufferedWatermarkImage:BufferedImage):Boolean {
+    if (getTransparency(bufferedWatermarkImage.colorModel.transparency) == "TRANSLUCENT"){
+        println("Do you want to use the watermark's Alpha channel?")
+        val input = readln()
+        if (input.lowercase() == "yes") {
+            return true
+        }
+    }
+    return false
 }
