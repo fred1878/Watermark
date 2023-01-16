@@ -95,7 +95,7 @@ fun getTransparency(tr:Int):String{
 }
 
 fun isNumber(s: String): Boolean {
-    return Regex("\\d+").matches(s)
+    return Regex("^\\d+\$").matches(s)
 }
 
 fun checkWeight(w:String):Int {
