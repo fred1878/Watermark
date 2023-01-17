@@ -2,6 +2,7 @@ import java.awt.Color
 import java.awt.image.BufferedImage
 import java.io.File
 import javax.imageio.ImageIO
+import kotlin.system.exitProcess
 
 fun main() {
     println("Input the image filename:")
@@ -34,7 +35,6 @@ fun main() {
 
     val bufferedWatermarkImage = ImageIO.read(watermark)
     val watermarkTransparency = askWatermarkTransparency(bufferedWatermarkImage)
-
     if (bufferedWatermarkImage.colorModel.numColorComponents != 3){
         println("The number of watermark color components isn't 3.")
         return
@@ -47,6 +47,9 @@ fun main() {
         println("The image and watermark dimensions are different.")
         return
     }
+    val transparencyColor = askTransparencyColor(watermarkTransparency,bufferedWatermarkImage)
+
+
 
     println("Input the watermark transparency percentage (Integer 0-100):")
     val w = readln()
@@ -66,7 +69,7 @@ fun main() {
         return
     }
 
-    val output = imageBlend(bufferedImage,bufferedWatermarkImage,weight,watermarkTransparency)
+    val output = imageBlend(bufferedImage,bufferedWatermarkImage,weight,watermarkTransparency,transparencyColor)
 
 
     ImageIO.write(output, outputName.split(".").last(), File(outputName))
@@ -112,14 +115,14 @@ fun checkWeight(w:String):Int {
     }
 }
 
-fun imageBlend(image:BufferedImage,watermark:BufferedImage, weight:Int,watermarkTransparency:Boolean):BufferedImage {
+fun imageBlend(image:BufferedImage,watermark:BufferedImage, weight:Int,watermarkTransparency:Boolean,transparencyColor:Color?):BufferedImage {
     val output = BufferedImage(image.width,image.height,BufferedImage.TYPE_INT_RGB)
     for (x in 0 until image.width){
         for (y in 0 until image.height){
             val a = Color(image.getRGB(x,y)) //image
             val b = Color(watermark.getRGB(x,y),watermarkTransparency) // watermark
 
-            val color = if (b.alpha == 0) {
+            val color = if (b.alpha == 0 || (b.red == transparencyColor?.red && b.green == transparencyColor?.green && b.blue == transparencyColor?.blue)) {
                 Color(a.red, a.green, a.blue)
             } else {
                 Color(
@@ -142,4 +145,32 @@ fun askWatermarkTransparency(bufferedWatermarkImage:BufferedImage):Boolean {
         }
     }
     return false
+}
+
+fun askTransparencyColor(alpha:Boolean, watermark: BufferedImage): Color?{
+    if (alpha) return null
+    if (watermark.colorModel.pixelSize == 24) {
+        println("Do you want to set a transparency color?")
+        val input = readln()
+        if (input != "yes") {
+            return null
+        }
+        println("Input a transparency color ([Red] [Green] [Blue]):")
+        val colorInput = readln()
+        if ("(\\d+) (\\d+) (\\d+)".toRegex().matches(colorInput)) {
+            val r = colorInput.split("\\s".toRegex())[0].toInt()
+            val g = colorInput.split("\\s".toRegex())[1].toInt()
+            val b = colorInput.split("\\s".toRegex())[2].toInt()
+            if (r in 0..255 && b in 0..255 && g in 0..255){
+                return Color(r, g, b)
+            } else {
+                println("The transparency color input is invalid.")
+                exitProcess(3)
+            }
+        } else {
+            println("The transparency color input is invalid.")
+            exitProcess(3)
+        }
+    }
+    return null
 }
