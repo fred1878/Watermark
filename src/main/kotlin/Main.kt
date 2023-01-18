@@ -34,7 +34,14 @@ fun main() {
     }
 
     val bufferedWatermarkImage = ImageIO.read(watermark)
+
+    if (bufferedWatermarkImage.height > bufferedImage.height || bufferedWatermarkImage.width > bufferedImage.width){
+        println("The watermark's dimensions are larger.")
+        return
+    }
+
     val watermarkTransparency = askWatermarkTransparency(bufferedWatermarkImage)
+
     if (bufferedWatermarkImage.colorModel.numColorComponents != 3){
         println("The number of watermark color components isn't 3.")
         return
@@ -43,10 +50,7 @@ fun main() {
         println("The watermark isn't 24 or 32-bit.")
         return
     }
-    if (bufferedWatermarkImage.height != bufferedImage.height || bufferedWatermarkImage.width != bufferedImage.width){
-        println("The image and watermark dimensions are different.")
-        return
-    }
+
     val transparencyColor = askTransparencyColor(watermarkTransparency,bufferedWatermarkImage)
 
 
@@ -57,6 +61,7 @@ fun main() {
     if (weight == -1) {
         return
     }
+
 
     println("Input the output image filename (jpg or png extension):")
     val outputName = readln()
