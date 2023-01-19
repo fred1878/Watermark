@@ -2,7 +2,6 @@ import java.awt.Color
 import java.awt.image.BufferedImage
 import java.io.File
 import javax.imageio.ImageIO
-import kotlin.system.exitProcess
 
 class Position(val type:String, val pair: Pair<Int, Int>? = null)
 
@@ -129,7 +128,16 @@ fun imageBlend(image:BufferedImage,watermark:BufferedImage, weight:Int,watermark
     for (x in 0 until image.width){
         for (y in 0 until image.height){
             val a = Color(image.getRGB(x,y)) //image
-            val b = Color(watermark.getRGB(x,y),watermarkTransparency) // watermark
+            val b = if (position.type == "grid"){ // watermark
+                Color(watermark.getRGB(x % watermark.width, y % watermark.height), watermarkTransparency)
+            } else {
+                if (x in (position.pair!!.first .. (position.pair.first + watermark.width)) &&
+                    y in (position.pair.second .. (position.pair.second + watermark.height))){
+                    Color(watermark.getRGB(x - position.pair.first, y - position.pair.second), watermarkTransparency)
+                } else {
+                    Color(image.getRGB(x,y))
+                }
+            }
 
             val color = if (b.alpha == 0 || (b.red == transparencyColor?.red && b.green == transparencyColor?.green && b.blue == transparencyColor?.blue)) {
                 Color(a.red, a.green, a.blue)
@@ -173,12 +181,10 @@ fun askTransparencyColor(alpha:Boolean, watermark: BufferedImage): Color?{
             if (r in 0..255 && b in 0..255 && g in 0..255){
                 return Color(r, g, b)
             } else {
-                println("The transparency color input is invalid.")
-                exitProcess(3)
+                throw Exception("The transparency color input is invalid.")
             }
         } else {
-            println("The transparency color input is invalid.")
-            exitProcess(3)
+            throw Exception("The transparency color input is invalid.")
         }
     }
     return null
@@ -197,12 +203,12 @@ fun getSinglePosition(maxDiffX:Int, maxDiffY:Int):Pair<Int,Int>{
     println("Input the watermark position ([x 0-$maxDiffX] [y 0-$maxDiffY]):")
     val pos = readln()
 
-    if ("(\\d+) (\\d+)".toRegex().matches(pos)){
+    return if ("(-?\\d+) (-?\\d+)".toRegex().matches(pos)){
         val x = pos.split("\\s".toRegex())[0].toInt()
         val y = pos.split("\\s".toRegex())[1].toInt()
 
         if (x in 0..maxDiffX && y in 0..maxDiffY){
-            return Pair(x,y)
+            Pair(x,y)
         } else {
             throw Exception("The position input is out of range.")
         }
