@@ -131,8 +131,8 @@ fun imageBlend(image:BufferedImage,watermark:BufferedImage, weight:Int,watermark
             val b = if (position.type == "grid"){ // watermark
                 Color(watermark.getRGB(x % watermark.width, y % watermark.height), watermarkTransparency)
             } else {
-                if (x in (position.pair!!.first .. (position.pair.first + watermark.width)) &&
-                    y in (position.pair.second .. (position.pair.second + watermark.height))){
+                if (x in (position.pair!!.first until (position.pair.first + watermark.width)) &&
+                    y in (position.pair.second until (position.pair.second + watermark.height))){
                     Color(watermark.getRGB(x - position.pair.first, y - position.pair.second), watermarkTransparency)
                 } else {
                     Color(image.getRGB(x,y))
