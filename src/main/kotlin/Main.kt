@@ -4,6 +4,8 @@ import java.io.File
 import javax.imageio.ImageIO
 import kotlin.system.exitProcess
 
+class Position(val type:String, val pair: Pair<Int, Int>? = null)
+
 fun main() {
     println("Input the image filename:")
     val filename = readln()
@@ -61,7 +63,9 @@ fun main() {
     if (weight == -1) {
         return
     }
-
+    val maxDiffX = bufferedImage.width - bufferedWatermarkImage.width
+    val maxDiffY = bufferedImage.height - bufferedWatermarkImage.height
+    val position = getPosition(maxDiffX,maxDiffY)
 
     println("Input the output image filename (jpg or png extension):")
     val outputName = readln()
@@ -74,7 +78,7 @@ fun main() {
         return
     }
 
-    val output = imageBlend(bufferedImage,bufferedWatermarkImage,weight,watermarkTransparency,transparencyColor)
+    val output = imageBlend(bufferedImage,bufferedWatermarkImage,weight,watermarkTransparency,transparencyColor,position)
 
 
     ImageIO.write(output, outputName.split(".").last(), File(outputName))
@@ -120,7 +124,7 @@ fun checkWeight(w:String):Int {
     }
 }
 
-fun imageBlend(image:BufferedImage,watermark:BufferedImage, weight:Int,watermarkTransparency:Boolean,transparencyColor:Color?):BufferedImage {
+fun imageBlend(image:BufferedImage,watermark:BufferedImage, weight:Int,watermarkTransparency:Boolean,transparencyColor:Color?,position: Position):BufferedImage {
     val output = BufferedImage(image.width,image.height,BufferedImage.TYPE_INT_RGB)
     for (x in 0 until image.width){
         for (y in 0 until image.height){
@@ -178,4 +182,31 @@ fun askTransparencyColor(alpha:Boolean, watermark: BufferedImage): Color?{
         }
     }
     return null
+}
+
+fun getPosition(maxDiffX:Int, maxDiffY:Int):Position{
+    println("Choose the position method (single, grid):")
+    return when (readln().lowercase()) {
+        "single" -> Position("single", getSinglePosition(maxDiffX, maxDiffY))
+        "grid" -> Position("grid")
+        else -> throw Exception("The position method input is invalid.")
+    }
+}
+
+fun getSinglePosition(maxDiffX:Int, maxDiffY:Int):Pair<Int,Int>{
+    println("Input the watermark position ([x 0-$maxDiffX] [y 0-$maxDiffY]):")
+    val pos = readln()
+
+    if ("(\\d+) (\\d+)".toRegex().matches(pos)){
+        val x = pos.split("\\s".toRegex())[0].toInt()
+        val y = pos.split("\\s".toRegex())[1].toInt()
+
+        if (x in 0..maxDiffX && y in 0..maxDiffY){
+            return Pair(x,y)
+        } else {
+            throw Exception("The position input is out of range.")
+        }
+    } else {
+        throw Exception("The position input is invalid.")
+    }
 }
